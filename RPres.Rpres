@@ -77,14 +77,15 @@ Insights into the Data
 library(ggplot2)
 
 g1 <- group_by(t1,F_Day) %>% summarise (count=n())
-g1$F_Day <- factor(g1$F_Day,levels(g1$F_Day)[c(2,7,8,6,1,4,5,3)])
+g1$F_Day <- factor(g1$F_Day,levels(g1$F_Day)[c(5,2,7,8,6,1,4,3)])
 
-g <- ggplot(g1,aes(x=F_Day,y=count))
-g <- g + geom_histogram(stat="identity",aes(fill=count))
+g <- ggplot(g1[!g1$F_Day=="mon-fri",],aes(x=F_Day,y=count))
+g <- g + geom_histogram(stat="identity")
 g <- g +  labs(title="Program Options per day",x="Day of the Week",y="Number of Programs")
 g <- g + theme(plot.title = element_text(size=25))
 g
 ```
+<small>Note: "Mon-Fri" weeklong programs were excluded from chart.</small>
 
 ***
 
