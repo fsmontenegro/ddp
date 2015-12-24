@@ -1,0 +1,111 @@
+Modern Parenting - Data Science to the "R"escue!
+========================================================
+author: Fernando Montenegro (fsmontenegro@gmail.com)
+date: Dec 24th, 2015
+
+========================================================
+<style>
+.reveal p {
+  font-size: 30px;
+}
+.reveal ul {
+  font-size: 30px;
+  line-height: 90%;
+}
+.reveal ol {
+  font-size: 30px;
+  line-height: 90%;
+}
+.reveal pre code {
+  font-size: 1em;
+  line-height: 90%;
+}
+</style>
+
+```{r echo=FALSE}
+
+library(htmlwidgets)
+library(leaflet)
+library(dplyr)
+
+suppressMessages(source("./dataprep.R"))
+
+total_programs <- nrow(t1)
+total_centres <- nrow(commcentres)
+```
+Parents in and around [Markham, ON](http://www.markham.ca) (Canada) have [access](https://econnect.markham.ca/Start/Start.asp) to hundreds (`r total_programs` to be exact) of city-run programs for their kids, from Pottery to Video Game design to Hockey and more, spread across `r total_centres` locations.
+
+```{r map, results = 'asis', cache=F, comment = NA, message = F, echo = F}
+map <- leaflet(commcentres) %>%
+        addTiles() %>%
+        addMarkers(lng=~long,lat=~lat,popup=~Name)
+map$width = 400
+map$height = 400
+saveWidget(map, './leaflet1.html')
+
+cat('<iframe style="width:400px;height:400px;" frameborder="0" src="./leaflet1.html"></iframe>')
+```
+
+***
+
+Details about these programs are provided in a magazine ([Markham Life](https://www.markham.ca/wps/portal/Markham/RecreationCulture/ProgramsActivities/markhamlifemagazine)) and parents then have to register for these programs in person, via mail, or online. In addition to the stress of being able to get a spot in a highly sought program - the city websites become [overloaded](https://twitter.com/fsmontenegro/status/664045204266090499) as people log in on registration day - there's also the effort to choose from a large number of program options.
+
+It would be helpful for parents to have a quick way of seeing which programs are available for a child, given common parameters such as the child age, distance to program, and what day/time of day are of interest.
+
+
+About the app
+========================================================
+
+[This Shiny application](https://fsmontenegro.shinyapps.io/Kids_Activities) loads program data and community centre locations from CSV files and, based on intuitive user inputs, does three primary functions:
+
+1. Calculate distance from the home to each community centre based on the [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) for distance calculation on a sphere.
+2. Calculate an approximation for the age requirements for each program.
+3. Filter which programs meet all the relevant criteria.
+
+It then displays a map of the city area with markers for locations, a circle with radius of desired distance centered on the home location, and the filtered list of programs in table format.
+
+***
+
+![pipeline](pipeline2.png)
+
+![ui](screenshot.png)
+
+Insights into the Data
+========================================================
+
+```{r stats, cache=F, comment = NA, message = F, echo = F}
+library(ggplot2)
+
+g1 <- group_by(t1,F_Day) %>% summarise (count=n())
+g1$F_Day <- factor(g1$F_Day,levels(g1$F_Day)[c(2,7,8,6,1,4,5,3)])
+
+g <- ggplot(g1,aes(x=F_Day,y=count))
+g <- g + geom_histogram(stat="identity",aes(fill=count))
+g <- g +  labs(title="Program Options per day",x="Day of the Week",y="Number of Programs")
+g <- g + theme(plot.title = element_text(size=25))
+g
+```
+
+***
+
+Most Popular Locations
+
+```{r popular, tidy = T, cache=F, comment = NA, message = F, echo = F}
+g2 <- group_by(t1,Location) %>% summarise(count=n()) %>% top_n(n=10,wt=count)
+print.data.frame(g2[order(-g2$count),])
+```
+
+
+Lessons Learned & Next Steps
+========================================================
+
+Lessons from this project:
+* Large "non-web" effort on data cleanup (dataprep.R)
+* Even more time (lots, lots of hours) fumbling with CSS & HTML...
+* Got to experiment a lot with leaflet & Shiny (reactive, observers, ...)
+* "Done is better than perfect" - chose RPres over slidify for simplicity
+
+Next Steps:
+* Work with City of Markham to obtain more open data (CSV instead of PDF, more programs, include descriptions, ...)
+* Improve app with error checking, more functionality (save programs to list, ...)
+* Develop own HTML/CSS/JS skills for creating better apps/presentations.
